@@ -1,5 +1,9 @@
 package main
 
+import (
+	"math/rand"
+)
+
 type StepFn func(*Creature, *Ecosystem) bool
 
 func AllSteps() []StepFn {
@@ -14,7 +18,7 @@ func AllSteps() []StepFn {
 * Photosynthesis gives you +2 energy
  */
 func Photosynthesis(creature *Creature, eco *Ecosystem) bool {
-	creature.energy += 2
+	creature.energy += 1
 	return true
 }
 
@@ -24,14 +28,18 @@ func Photosynthesis(creature *Creature, eco *Ecosystem) bool {
 * and competitor's energy - 1 by eating them.
  */
 func ConsumeCompetitor(creature *Creature, eco *Ecosystem) bool {
-	for i := 0; i < len(eco.creatures); i++ {
-		competitor := eco.creatures[i]
+	for i, competitor := range eco.creatures {
 		// selection strategy is sort of desperate. No appreciation for their food!
-		if competitor != nil && competitor.size <= creature.size {
-			creature.size++
-			creature.energy += competitor.energy - 1
-			eco.KillCreature(i)
-			return true
+		if competitor != nil && competitor.size <= creature.size && competitor.name != creature.name {
+
+			if creature.size != competitor.size || rand.Float64() < 0.5 {
+				creature.size++
+				creature.energy += competitor.energy + 1
+				eco.KillCreature(i)
+				return true
+			} else {
+				break // sorry, you lose
+			}
 		}
 	}
 	return false
@@ -48,11 +56,13 @@ func ConsumeCompetitor(creature *Creature, eco *Ecosystem) bool {
 * the amount of energy
  */
 func Reproduce(creature *Creature, eco *Ecosystem) bool {
-	if eco.HasSpace() {
-		offspring := &Creature{creature.name, 1, DEFAULT_ENERGY, 0, creature.program.Mutate(1)}
-		eco.AddCreature(offspring)
-		return true
-	} else {
-		return false
+	retVal := false
+	for i := 0; i < creature.energy; i++ {
+		if eco.HasSpace() {
+			offspring := &Creature{creature.name, 1, DEFAULT_ENERGY, 0, creature.program.Mutate(1)}
+			eco.AddCreature(offspring)
+			retVal = true
+		}
 	}
+	return retVal
 }

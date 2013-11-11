@@ -34,11 +34,11 @@ type DecisionProgram struct {
 
 func (d *DecisionProgram) Execute(creature *Creature, eco *Ecosystem) {
 	totalActions := creature.size
-	for i := 0; i < len(d.steps); i++ {
-		if d.steps[i].Execute(creature, eco) {
-			totalActions--
-			if totalActions == 0 {
-				return
+
+	for a := 0; a < totalActions; a++ {
+		for i := 0; i < len(d.steps); i++ {
+			if d.steps[i].Execute(creature, eco) {
+				break
 			}
 		}
 	}

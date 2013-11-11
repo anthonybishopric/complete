@@ -7,12 +7,11 @@ import (
 )
 
 type Ecosystem struct {
-	creatures       [100]*Creature
-	spacesLeft      int
-	emittedEnergy   int // TBD - unused but could provide a cap on life created
-	turn            int
-	nameChannel     chan string
-	termNameChannel chan bool
+	creatures     [100]*Creature
+	spacesLeft    int
+	emittedEnergy int // TBD - unused but could provide a cap on life created
+	turn          int
+	nameChannel   chan string
 }
 
 // implement sort.Interface methods
@@ -24,6 +23,9 @@ func (e *Ecosystem) Len() int {
 func (e *Ecosystem) Less(i, j int) bool {
 	if e.creatures[i] == nil {
 		return false
+	}
+	if e.creatures[j] == nil {
+		return true
 	}
 	return e.creatures[i].size > e.creatures[j].size
 }
@@ -59,13 +61,12 @@ func (e *Ecosystem) AddCreature(creature *Creature) (int, error) {
 
 func (e *Ecosystem) Init() {
 	e.nameChannel = make(chan string)
-	e.termNameChannel = make(chan bool)
-	go CreatureNames(e.nameChannel, e.termNameChannel)
+	go CreatureNames(e.nameChannel)
 	e.FillEcosystem()
+	sort.Sort(e) // bigger creatures get to go first
 }
 
 func (e *Ecosystem) ExecuteTurn() {
-	sort.Sort(e) // bigger creatures get to go first
 	for i, creature := range e.creatures {
 		if creature != nil {
 			creature.program.Execute(creature, e)
@@ -76,14 +77,19 @@ func (e *Ecosystem) ExecuteTurn() {
 			}
 		}
 	}
-	e.FillEcosystem()
+	// e.FillEcosystem()
+	sort.Sort(e) // bigger creatures get to go first
 	e.turn++
 }
 
 func (e *Ecosystem) Debug() {
 	fmt.Printf("on turn %d...\n", e.turn)
 	for i, creature := range e.creatures {
-		fmt.Printf("%d: %s\n", i, creature.JSON())
+		if creature != nil {
+			fmt.Printf("%d: %s\n", i, creature.JSON())
+		} else {
+			fmt.Printf("%d: ..empty.. \n", i)
+		}
 	}
 }
 
@@ -102,6 +108,6 @@ func (e *Ecosystem) FillEcosystem() int {
 		}
 	}
 	e.spacesLeft = 0
-	fmt.Printf("Filled void with %d creatures\n", addedCreatures)
+	// fmt.Printf("Filled void with %d creatures\n", addedCreatures)
 	return addedCreatures
 }
